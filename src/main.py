@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pyspark.sql.functions as F
 from dotenv import load_dotenv
+from pyspark.errors import AnalysisException
 from pyspark.sql import DataFrame, SparkSession
 
 load_dotenv()
@@ -30,11 +31,16 @@ POSTGRE_PROPS = {
 def prepare_entity_df(
     spark: SparkSession, entity: str, specific_user_name: str, source_data_path: str
 ) -> DataFrame:
-    data = spark.read.load(
-        source_data_path,
-        format="parquet",
-        pathGlobFilter=f"{entity}*.parquet",
-    )
+    try:
+        data = spark.read.load(
+            source_data_path,
+            format="parquet",
+            pathGlobFilter=f"{entity}*.parquet",
+        )
+    except AnalysisException as e:
+        # most likely cause, no entity files were in source folder
+        print(e)
+        return
     data = data.select("device_settings").filter(
         data.device_settings["user_agent"] == F.lit(specific_user_name)
     )
@@ -84,16 +90,27 @@ def main():
 
     bucket = []
     for entity in ENTITIES:
-        bucket.append(
-            prepare_entity_df(
-                spark=spark,
-                entity=entity,
-                specific_user_name=SPECIFIC_USER_AGENT,
-                source_data_path=SOURCE_DATA_PATH,
-            )
+        res = prepare_entity_df(
+            spark=spark,
+            entity=entity,
+            specific_user_name=SPECIFIC_USER_AGENT,
+            source_data_path=str(SOURCE_DATA_PATH),
         )
+        if res:
+            bucket.append(res)
 
-    result = reduce(lambda a, b: a.join(b, on="datetime", how="outer"), bucket)
+    if len(bucket) == 0:
+        print("Nothing to process.")
+        return
+
+    elif len(bucket) > 1:
+        result = reduce(lambda a, b: a.join(b, on="datetime", how="outer"), bucket)
+    elif "impressions_count" not in bucket[0].schema.names:
+        result = bucket[0]
+        result = result.withColumn("impressions_count", F.lit(0))
+    else:
+        result = bucket[0]
+        result = result.withColumn("clicks_count", F.lit(0))
     result = result.na.fill(
         value=0, subset=[col for col in result.schema.names if col != "datetime"]
     )
