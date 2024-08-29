@@ -1,5 +1,10 @@
 # Adform task
 
+Incase you don't have docker installed you can find instructions on how to do it
+[here](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
+For java you can either run `sudo apt install openjdk-21-jre-headless` or research
+some other installation method :smiley:.
+
 An ETL for calculating clicks and impressions counts from parquet files in
 raw_data folder. After ETL is done, output folder is populated with a csv file
 in form:
@@ -23,13 +28,13 @@ Same results are also sent to local postgresql instance, `adform` database,
 
 To run this ETL for the first time, there few things that needs to be done.
 
-1. You will need to setup database. To do this you can run:
+1. First you will need to start database. To do this run this command:
 
-        bash db_first_run.sh
+        docker compose up -d
 
-    command from inside parent directory (same that contains README.md file). This will start 
-    postgres database and will create necessary table. It will ask for root db password which
-    can be found in `sec` directory `db_root_password.txt` file. You should see `CREATE TABLE`
+    command from inside parent directory (same that contains README.md file). This will start
+    postgres database and will create necessary table. You can find root password in `sec`
+    directory `db_root_password.txt` file. You should see `Container adform_postgres Started`
     output at the end incase of success. 
 
 2. You will need to install python dependencies (again from parent dir):

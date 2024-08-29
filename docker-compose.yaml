@@ -7,6 +7,7 @@ services:
             - "5432:5432"
         volumes:
             - adform_pg_data:/var/lib/postgresql/data
+            - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql:ro
         environment:
             - POSTGRES_USER=adform_admin
             - POSTGRES_DB=adform
