@@ -15,7 +15,7 @@ SPECIFIC_USER_AGENT = os.environ["SPECIFIC_USER_AGENT"]
 ENTITIES = ("clicks", "impressions")
 JDBC_DRIVER_PATH = os.environ["JDBC_DRIVER_PATH"]
 
-with open("../sec/db_root_password.txt") as f:
+with open(Path(__file__).parent.parent / "sec/db_root_password.txt") as f:
     DB_PASS = f.read()
 TABLE_NAME = os.environ["TABLE_NAME"]
 DB_NAME = os.environ["DB_NAME"]
@@ -28,10 +28,10 @@ POSTGRE_PROPS = {
 
 
 def prepare_entity_df(
-    spark: SparkSession, entity: str, specific_user_name: str
+    spark: SparkSession, entity: str, specific_user_name: str, source_data_path: str
 ) -> DataFrame:
     data = spark.read.load(
-        str(SOURCE_DATA_PATH),
+        source_data_path,
         format="parquet",
         pathGlobFilter=f"{entity}*.parquet",
     )
@@ -86,7 +86,10 @@ def main():
     for entity in ENTITIES:
         bucket.append(
             prepare_entity_df(
-                spark=spark, entity=entity, specific_user_name=SPECIFIC_USER_AGENT
+                spark=spark,
+                entity=entity,
+                specific_user_name=SPECIFIC_USER_AGENT,
+                source_data_path=SOURCE_DATA_PATH,
             )
         )
 
@@ -94,6 +97,7 @@ def main():
     result = result.na.fill(
         value=0, subset=[col for col in result.schema.names if col != "datetime"]
     )
+    # add missing columns for csv output
     result = result.withColumn("hour", F.hour(F.col("datetime")))
     result = result.withColumn("Date", F.to_date(F.col("datetime")))
     result_columns = ["Date", "hour", "impressions_count", "clicks_count"]
@@ -104,6 +108,7 @@ def main():
         POSTGRE_URL, TABLE_NAME, mode="append", properties=POSTGRE_PROPS
     )
 
+    # clean source folder
     [f.unlink() for f in SOURCE_DATA_PATH.glob("*.parquet")]
 
 

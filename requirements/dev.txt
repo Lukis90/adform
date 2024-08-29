@@ -1,0 +1,7 @@
+pyspark
+psycopg2-binary
+python-dotenv
+pytest
+numpy<2
+pandas<2
+pyarrow

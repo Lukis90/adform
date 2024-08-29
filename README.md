@@ -53,3 +53,8 @@ To run this ETL for the first time, there few things that needs to be done.
 4. You can now run ETL. Execute this from `src` directory:
 
         python main.py
+
+To launch pytests, first make sure you correctly installed dependencies from step 2, then
+simply run this from parent directory:
+
+        pytest
