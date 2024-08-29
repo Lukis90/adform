@@ -40,7 +40,11 @@ To run this ETL for the first time, there few things that needs to be done.
 
         pip install -r requirements/dev.txt
 
+3. You will need to download [postgresql-42.7.4.jar](https://jdbc.postgresql.org/download/)
+    for java 1.8+. If you have an older java version, you will find the instructions for that
+    on the same page. After you've downloaded postgres jdbc driver you will need to update
+    .env file `JDBC_DRIVER_PATH` variable with the path to your downloaded jar.
 
-3. You can now run ETL. Execute this from src directory:
+4. You can now run ETL. Execute this from `src` directory:
 
         python main.py

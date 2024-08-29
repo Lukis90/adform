@@ -1,14 +1,30 @@
+import os
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
 
 import pyspark.sql.functions as F
+from dotenv import load_dotenv
 from pyspark.sql import DataFrame, SparkSession
+
+load_dotenv()
 
 SOURCE_DATA_PATH = Path("../raw_data/")
 OUTPUT_PATH = Path("../output")
-SPECIFIC_USER_AGENT = "some user agent"
+SPECIFIC_USER_AGENT = os.environ["SPECIFIC_USER_AGENT"]
 ENTITIES = ("clicks", "impressions")
+JDBC_DRIVER_PATH = os.environ["JDBC_DRIVER_PATH"]
+
+with open("../sec/db_root_password.txt") as f:
+    DB_PASS = f.read()
+TABLE_NAME = os.environ["TABLE_NAME"]
+DB_NAME = os.environ["DB_NAME"]
+POSTGRE_URL = f"jdbc:postgresql://localhost:5432/{DB_NAME}"
+POSTGRE_PROPS = {
+    "user": os.environ["DB_USER"],
+    "password": DB_PASS,
+    "driver": "org.postgresql.Driver",
+}
 
 
 def prepare_entity_df(
@@ -60,7 +76,11 @@ def __add_columns(data: DataFrame) -> DataFrame:
 
 
 def main():
-    spark = SparkSession.builder.appName("Adform Exercise").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("Adform Exercise")
+        .config("spark.jars", JDBC_DRIVER_PATH)
+        .getOrCreate()
+    )
 
     bucket = []
     for entity in ENTITIES:
@@ -76,9 +96,12 @@ def main():
     )
     result = result.withColumn("hour", F.hour(F.col("datetime")))
     result = result.withColumn("Date", F.to_date(F.col("datetime")))
-    result_columns = ["Date", "hour"] + [f"{entity}_count" for entity in ENTITIES]
+    result_columns = ["Date", "hour", "impressions_count", "clicks_count"]
     result.select(result_columns).write.format("csv").save(
         str(OUTPUT_PATH / f"result_{datetime.now()}"), header=True
+    )
+    result.select("datetime", "impressions_count", "clicks_count").write.jdbc(
+        POSTGRE_URL, TABLE_NAME, mode="append", properties=POSTGRE_PROPS
     )
 
     [f.unlink() for f in SOURCE_DATA_PATH.glob("*.parquet")]
