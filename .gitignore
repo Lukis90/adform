@@ -1,0 +1,6 @@
+**/.ipynb_checkpoints
+**/*.ipynb
+raw_data_copy
+output/**
+__pycache__/
+# sec/**  realiai sitas butu neuzkomentuotas

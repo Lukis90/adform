@@ -1,0 +1,22 @@
+services:
+    dr_rms_postgres:
+        image: postgres:16.4
+        container_name: adform_postgres
+        shm_size: 256mb
+        ports:
+            - "5432:5432"
+        volumes:
+            - adform_pg_data:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_USER=adform_admin
+            - POSTGRES_DB=adform
+            - POSTGRES_PASSWORD_FILE=/run/secrets/db_root_password
+        secrets:
+            - db_root_password
+
+secrets:
+    db_root_password:
+        file: ./sec/db_root_password.txt
+
+volumes:
+    adform_pg_data:

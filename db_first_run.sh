@@ -1,0 +1,1 @@
+docker compose up -d && sleep 2 && psql -U adform_admin -h localhost -d adform -f create_table.dump
