@@ -41,7 +41,7 @@ To run this ETL for the first time, there few things that needs to be done.
 
         pip install -r requirements/prod.txt
 
-    To execute pytests you will need to install `dev` dependencies instead:
+    To execute pytests you will need to install `dev` dependencies instead (it will take some time):
 
         pip install -r requirements/dev.txt
 
